@@ -3,13 +3,14 @@ var request = require('request')
 
 var endpoints = {
   "light_control": "http://localhost:8100",
-  "weather": "http://localhost:8101"
+  "weather": "http://localhost:8101",
+  "temperature": "http://localhost:8101"
 }
 
 function routeCommand(command) {
   console.log(command);
   var endpoint = endpoints[command.category]
-  request.post(endpoint, {body: JSON.stringify(command.commands)}, function (err, response, body) {
+  request.post(endpoint, {body: JSON.stringify(command)}, function (err, response, body) {
     if (err) {
       console.error("Unable to reach " + command.category + " unit")
       return console.error(err);
