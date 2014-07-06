@@ -41,7 +41,9 @@ end
 task :setup => :environment do
   queue! %[mkdir -p "#{deploy_to}/shared/log"]
   queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/log"]
-  #
+
+  queue! %[cp "#{deploy_to}/utils/assistant-router.conf" /etc/init]
+  
   # queue! %[mkdir -p "#{deploy_to}/shared/config"]
   # queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/config"]
   #
