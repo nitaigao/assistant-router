@@ -35,6 +35,10 @@ task :environment do
   # invoke :'rvm:use[ruby-1.9.3-p125@default]'
 end
 
+task :system => :environment do
+    queue! %[sudo apt-get install nodejs]
+end
+
 # Put any custom mkdir's in here for when `mina setup` is ran.
 # For Rails apps, we'll make some of the shared paths that are shared between
 # all releases.
@@ -44,6 +48,9 @@ task :setup => :environment do
 
   queue! %[mkdir -p "#{deploy_to}/shared/config"]
   queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/config"]
+
+  queue! %[sudo touch "/etc/init.d/assistant-router.sh"]
+
   #
   # queue! %[touch "#{deploy_to}/shared/config/database.yml"]
   # queue  %[echo "-----> Be sure to edit 'shared/config/database.yml'."]
@@ -60,8 +67,8 @@ task :deploy => :environment do
     # invoke :'rails:db_migrate'
     # invoke :'rails:assets_precompile'
 
-    queue! %[sudo rm "/etc/init/assistant-router.conf"]
-    queue! %[sudo ln -s "#{deploy_to}/current/config/service.conf" "/etc/init/assistant-router.conf"]
+    queue! %[sudo rm "/etc/init.d/assistant-router.sh"]
+    queue! %[sudo ln -s "#{deploy_to}/current/config/service.sh" "/etc/init.d/assistant-router.sh"]
 
     to :launch do
       queue "touch #{deploy_to}/tmp/restart.txt"
