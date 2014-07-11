@@ -1,7 +1,7 @@
 require 'mina/git'
 
 set :domain, '192.168.1.104'
-set :deploy_to, '/home/pi/house'
+set :deploy_to, '/home/pi/house/router'
 set :repository, 'https://github.com/nkostelnik/assistant-router.git'
 set :node_version, 'node-v0.10.24-linux-arm-armv6j-vfp-hard'
 set :shared_paths, ['node_modules', 'log']
