@@ -28,8 +28,11 @@ function startCommandServer(port) {
 
     req.on('end', function () {
       res.end('OK!')
-      var command = JSON.parse(body)
-      routeCommand(command)
+      if (body.length > 0) {
+        console.log(body)
+        var command = JSON.parse(body)
+        routeCommand(command)
+      }
     })
 
   }).listen(port)

@@ -1,84 +1,46 @@
-require 'mina/bundler'
-require 'mina/rails'
 require 'mina/git'
-# require 'mina/rbenv'  # for rbenv support. (http://rbenv.org)
-# require 'mina/rvm'    # for rvm support. (http://rvm.io)
-
-# Basic settings:
-#   domain       - The hostname to SSH to.
-#   deploy_to    - Path to deploy into.
-#   repository   - Git repo to clone from. (needed by mina/git)
-#   branch       - Branch name to deploy. (needed by mina/git)
 
 set :domain, '192.168.1.104'
 set :deploy_to, '/home/pi/house'
 set :repository, 'https://github.com/nkostelnik/assistant-router.git'
-set :branch, 'master'
+set :node_version, 'node-v0.10.24-linux-arm-armv6j-vfp-hard'
+set :shared_paths, ['node_modules', 'log']
+set :user, 'pi'
 
-# Manually create these paths in shared/ (eg: shared/config/database.yml) in your server.
-# They will be linked in the 'deploy:link_shared_paths' step.
-# set :shared_paths, ['config/database.yml', 'log']
-set :shared_paths, ['log']
-
-# Optional settings:
-set :user, 'pi'    # Username in the server to SSH to.
-#   set :port, '30000'     # SSH port number.
-
-# This task is the environment that is loaded for most commands, such as
-# `mina deploy` or `mina rake`.
 task :environment do
-  # If you're using rbenv, use this to load the rbenv environment.
-  # Be sure to commit your .rbenv-version to your repository.
-  # invoke :'rbenv:load'
-
-  # For those using RVM, use this to load an RVM version@gemset.
-  # invoke :'rvm:use[ruby-1.9.3-p125@default]'
+  queue "PATH=$PATH:/home/pi/node/bin"
 end
 
 task :system => :environment do
-    queue! %[sudo apt-get install nodejs]
+  queue! %[wget https://gist.github.com/raw/3245130/v0.10.24/#{node_version}.tar.gz]
+  queue! %[tar zxvf #{node_version}.tar.gz]
+  queue! %[rm #{node_version}.tar.gz]
+  queue! %[ln -s #{node_version} node]
+  queue! %[npm install -g forever]
 end
 
-# Put any custom mkdir's in here for when `mina setup` is ran.
-# For Rails apps, we'll make some of the shared paths that are shared between
-# all releases.
 task :setup => :environment do
   queue! %[mkdir -p "#{deploy_to}/shared/log"]
   queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/log"]
 
-  queue! %[mkdir -p "#{deploy_to}/shared/config"]
-  queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/config"]
+  queue! %[mkdir -p "#{deploy_to}/shared/node_modules"]
+  queue! %[chmod g+rx,u+rwx "#{deploy_to}/shared/node_modules"]
+end
 
-  queue! %[sudo touch "/etc/init.d/assistant-router.sh"]
-
-  #
-  # queue! %[touch "#{deploy_to}/shared/config/database.yml"]
-  # queue  %[echo "-----> Be sure to edit 'shared/config/database.yml'."]
+task :npm => :environment do
+  queue "cd #{deploy_to}/current && npm install"
 end
 
 desc "Deploys the current version to the server."
 task :deploy => :environment do
   deploy do
-    # Put things that will set up an empty directory into a fully set-up
-    # instance of your project.
     invoke :'git:clone'
     invoke :'deploy:link_shared_paths'
-    # invoke :'bundle:install'
-    # invoke :'rails:db_migrate'
-    # invoke :'rails:assets_precompile'
-
-    queue! %[sudo rm "/etc/init.d/assistant-router.sh"]
-    queue! %[sudo ln -s "#{deploy_to}/current/config/service.sh" "/etc/init.d/assistant-router.sh"]
+    invoke :'npm'
 
     to :launch do
-      queue "touch #{deploy_to}/tmp/restart.txt"
+      # queue "forever stop #{deploy_to}/current/index.js"
+      queue "forever start #{deploy_to}/current/index.js"
     end
   end
 end
-
-# For help in making your deploy script, see the Mina documentation:
-#
-#  - http://nadarei.co/mina
-#  - http://nadarei.co/mina/tasks
-#  - http://nadarei.co/mina/settings
-#  - http://nadarei.co/mina/helpers
